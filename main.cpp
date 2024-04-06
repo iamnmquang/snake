@@ -76,7 +76,17 @@ int main()
     // Collision detection
     std::for_each(apples.begin(), apples.end(), [&](auto &apple)
     {
-        if(head.x == apple.x && head.y == apple.y)
+        // if((head.x == apple.x || head.x == apple.y) && (head.y == apple.x || head.y == apple.y))
+        // {
+        //     siz += 5;
+        //     apple.x = -5;
+        //     apple.y = -5;
+        // }
+
+        if (head.x + head.w >= apple.x &&  
+            apple.x + apple.w >= head.x &&
+            head.y + head.h >= apple.y && 
+            apple.y + apple.h >= head.y)
         {
             siz += 5;
             apple.x = -5;

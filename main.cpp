@@ -1,44 +1,63 @@
 #define SDL_MAIN_HANDLED
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
 #include <stdio.h>
 #include <string>
 #include <iostream>
-#include <algorithm>
 #include <deque>
-#include <vector>
-
+#include <ctime>
 
 
 int main()
 {
     SDL_Init(SDL_INIT_EVERYTHING);
+    if (TTF_Init() < 0) {
+        std::cout << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
     SDL_Window *window = SDL_CreateWindow("Snake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 640, 0);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_Event e;
 
     enum Direction
     {
-        DOWN,LEFT,RIGHT,UP
+        DOWN, LEFT, RIGHT, UP
     };
 
     bool running = true;
-    int dir = 0;
+	bool gameover = false;
+    int dir = RIGHT;
+    int score = 0;
     SDL_Rect head {500,500,10,10};
+    std::deque<std::pair<int, int>> snake;
+    snake.push_front(std::make_pair(head.x, head.y));
 
-    // Snake body container
+    // Apple position
+    std::pair<int, int> apple = std::make_pair(rand() % 80 * 10, rand() % 64 * 10);
 
-    std::deque<SDL_Rect> rq;
-    int siz = 5;
-    // Apple container
-
-    std::vector<SDL_Rect> apples;
-    for(int i = 0; i < 100; i++)
-    {
-        apples.emplace_back(SDL_Rect{rand() % 100 * 10, rand() % 100 * 10, 10, 10});
+    SDL_Surface* gameOverSurface = IMG_Load("gameover.jpg");
+    if (!gameOverSurface) {
+        std::cout << "Failed to load game over image: " << IMG_GetError() << std::endl;
+        return 1;
+    }
+    SDL_Texture* gameOverTexture = SDL_CreateTextureFromSurface(renderer, gameOverSurface);
+    if (!gameOverTexture) {
+        std::cout << "Failed to create texture from game over surface: " << SDL_GetError() << std::endl;
+        return 1;
     }
 
-    while(running)
+    // Load font
+    TTF_Font *font = TTF_OpenFont("Point.ttf",30);
+    if(!font)
+    {
+        std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+        return 1;
+    }
+    
+
+    while(running && !gameover)
     {
         while(SDL_PollEvent(&e))
         {
@@ -48,60 +67,33 @@ int main()
             }
             if(e.type == SDL_KEYDOWN)
             {
-                if(e.key.keysym.sym == SDLK_DOWN) {dir = DOWN;}
-                 if(e.key.keysym.sym == SDLK_UP) {dir = UP;}
-                  if(e.key.keysym.sym == SDLK_RIGHT) {dir = RIGHT;}
-                   if(e.key.keysym.sym == SDLK_LEFT) {dir = LEFT;}
+                if(e.key.keysym.sym == SDLK_DOWN && dir != UP) {dir = DOWN;}
+                if(e.key.keysym.sym == SDLK_UP && dir != DOWN) {dir = UP;}
+                if(e.key.keysym.sym == SDLK_RIGHT && dir != LEFT) {dir = RIGHT;}
+                if(e.key.keysym.sym == SDLK_LEFT && dir != RIGHT) {dir = LEFT;}
             }
         }
+
         // Move
         switch (dir)
         {
-        case DOWN:
-            head.y += 5;
-            break;
-        case UP:
-            head.y -= 5;
-            break;
-        case RIGHT:
-            head.x += 5;
-            break;
-        case LEFT:
-            head.x -= 5;
-            break;
-        
-        default:
-            break;
+            case DOWN:
+                head.y += 10;
+                break;
+            case UP:
+                head.y -= 10;
+                break;
+            case RIGHT:
+                head.x += 10;
+                break;
+            case LEFT:
+                head.x -= 10;
+                break;
+            default:
+                break;
         }
-    // Collision detection
-    std::for_each(apples.begin(), apples.end(), [&](auto &apple)
-    {
-        // if((head.x == apple.x || head.x == apple.y) && (head.y == apple.x || head.y == apple.y))
-        // {
-        //     siz += 5;
-        //     apple.x = -5;
-        //     apple.y = -5;
-        // }
-
-        if (head.x + head.w >= apple.x &&  
-            apple.x + apple.w >= head.x &&
-            head.y + head.h >= apple.y && 
-            apple.y + apple.h >= head.y)
-        {
-            siz += 5;
-            apple.x = -5;
-            apple.y = -5;
-        }
-    });
-
-    // Collision detection with snake body
-    std::for_each(rq.begin(), rq.end(), [&](auto & snake_segment)
-    {
-        if(head.x == snake_segment.x && head.y == snake_segment.y)
-        {
-            siz = 5;
-        }
-        if(head.x < 0 )
+        snake.push_front(std::make_pair(head.x, head.y));
+		if(head.x < 0 )
         {
             head.x = 800;
         }
@@ -117,35 +109,84 @@ int main()
         {
             head.y = 0;
         }
-    });
-
-    // Add newest head
-    rq.push_front(head);
-    while((int)rq.size() > siz)
-    {
-        rq.pop_back();
-    }
-
-    // Clear Window
-    SDL_SetRenderDrawColor(renderer,0,0,0,255);
-    SDL_RenderClear(renderer);
-
-    // Draw Body
-    SDL_SetRenderDrawColor(renderer,255,255,255,255);
-   for (auto &segment : rq)
+        // Collision detection with apple
+        if (head.x == apple.first && head.y == apple.second)
         {
-            SDL_RenderFillRect(renderer, &segment);
+            // Generate new position for the apple
+            score++;
+            apple = std::make_pair(rand() % 80 * 10, rand() % 64 * 10);
+        }
+        else
+        {
+            // Remove the tail
+            snake.pop_back();
+        }
+        for (auto it = snake.begin() + 1; it != snake.end(); ++it) {
+            if (head.x == it->first && head.y == it->second) {
+                gameover = true;
+                break;
+            }
+        }
+        if(gameover)
+        {
+           // Clear renderer
+            SDL_RenderClear(renderer);
+            
+            // Draw game over texture
+            SDL_RenderCopy(renderer, gameOverTexture, NULL, NULL);
+
+            // Update screen
+            SDL_RenderPresent(renderer);
+
+             SDL_Delay(5000);
         }
 
+        // Clear Window
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderClear(renderer);
 
-    // Draw apples
-    SDL_SetRenderDrawColor(renderer, 255,255,0,255);
-    for (auto &apple : apples)
+        // Draw Snake
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        for (auto &segment : snake)
         {
-            SDL_RenderFillRect(renderer, &apple);
+            SDL_Rect rect = {segment.first, segment.second, 10, 10};
+            SDL_RenderFillRect(renderer, &rect);
         }
-    SDL_RenderPresent(renderer);
-    SDL_Delay(25);
+
+        // Draw apple
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_Rect appleRect = {apple.first, apple.second, 10, 10};
+        SDL_RenderFillRect(renderer, &appleRect);
+
+        SDL_Color textColor = {255, 255, 255, 255};
+        SDL_Surface* scoreSurface = TTF_RenderText_Solid(font, ("Score: " + std::to_string(score)).c_str(), textColor);
+        if (!scoreSurface) {
+            std::cout << "Failed to render score surface: " << TTF_GetError() << std::endl;
+            return 1;
+        }
+        SDL_Texture* scoreTexture = SDL_CreateTextureFromSurface(renderer, scoreSurface);
+        if (!scoreTexture) {
+            std::cout << "Failed to create score texture: " << SDL_GetError() << std::endl;
+            return 1;
+        }
+        SDL_Rect scoreRect = {0, 0, scoreSurface->w, scoreSurface->h};
+        SDL_RenderCopy(renderer, scoreTexture, NULL, &scoreRect);
+
+        // Free memory
+        SDL_FreeSurface(scoreSurface);
+        SDL_DestroyTexture(scoreTexture);
+
+
+        SDL_RenderPresent(renderer);
+        SDL_Delay(100); // Adjust the speed of the snake
     }
-   return 0;
+
+    TTF_CloseFont(font);
+    SDL_FreeSurface(gameOverSurface);
+    SDL_DestroyTexture(gameOverTexture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
+    return 0;
 }

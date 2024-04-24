@@ -9,7 +9,11 @@
 #include <deque>
 #include <ctime>
 
-void StartGame(SDL_Renderer* renderer, TTF_Font* font);
+const int WINDOW_WIDTH = 800;
+const int WINDOW_HEIGHT = 640;
+const int GRID_SIZE = 10;
+const int GAME_SPEED = 100;
+
 void ExitGame();
 
 void ShowTutorial(SDL_Renderer* renderer, TTF_Font* font) {
@@ -39,6 +43,16 @@ void ShowTutorial(SDL_Renderer* renderer, TTF_Font* font) {
         SDL_RenderCopy(renderer, Line1Texture, NULL, &Line1Rect);
         SDL_FreeSurface(Line1Surface);
         SDL_DestroyTexture(Line1Texture);
+
+        TTF_Font* NMQ = TTF_OpenFont("Point.ttf", 20);
+        std::string Name = "This project was created by Nguyen Minh Quang";
+        SDL_Surface* NameSurface = TTF_RenderText_Blended_Wrapped(NMQ, Name.c_str(), textColor, 100);
+        SDL_Texture* NameTexture = SDL_CreateTextureFromSurface(renderer, NameSurface);
+        SDL_Rect NameRect = {600, 420, NameSurface->w, NameSurface->h};
+        SDL_RenderCopy(renderer, NameTexture, NULL, &NameRect);
+        SDL_FreeSurface(NameSurface);
+        SDL_DestroyTexture(NameTexture);
+        
 
         std::string backButton = "Back";
         SDL_Surface* backSurface = TTF_RenderText_Solid(font, backButton.c_str(), textColor);
@@ -113,7 +127,7 @@ void ShowMenu(SDL_Renderer* renderer, TTF_Font* font) {
                 SDL_GetMouseState(&mouseX, &mouseY);
                 if (mouseX >= playRect.x && mouseX <= playRect.x + playRect.w &&
                     mouseY >= playRect.y && mouseY <= playRect.y + playRect.h) {
-                    // Nếu người dùng chọn Play Game5
+                    // Nếu người dùng chọn Play Game
                     isRunning = false;
                 }
                 else if(mouseX >= TutorialRect.x && mouseX <= TutorialRect.x + TutorialRect.w &&
@@ -133,10 +147,6 @@ void ShowMenu(SDL_Renderer* renderer, TTF_Font* font) {
     }
 }
 
-void StartGame(SDL_Renderer* renderer, TTF_Font* font) {
-    // Thực hiện logic để bắt đầu trò chơi
-}
-
 void ExitGame() {
     SDL_Quit();
     exit(0);
@@ -144,13 +154,14 @@ void ExitGame() {
 
 int main()
 {
+    // Khởi tạo cũng như thực hiện các việc như tải ảnh và âm thanh
     SDL_Init(SDL_INIT_EVERYTHING);
     if (TTF_Init() < 0) {
         std::cout << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << std::endl;
         SDL_Quit();
         return 1;
     }
-    SDL_Window *window = SDL_CreateWindow("SnakeScreen", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 640, 0);
+    SDL_Window *window = SDL_CreateWindow("SnakeScreen", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, 0);
     SDL_Event e;
 
@@ -183,6 +194,7 @@ int main()
         DOWN, LEFT, RIGHT, UP
     };
 
+    // Bắt đầu trò chơi
     StartGame:
     bool running = true;
 	bool gameover = false;
@@ -192,8 +204,8 @@ int main()
     std::deque<std::pair<int, int>> snake;
     snake.push_front(std::make_pair(head.x, head.y));
 
-    // Apple position
-    std::pair<int, int> apple = std::make_pair(rand() % 80 * 10, rand() % 64 * 10);
+    // Vị trí quả táo
+    std::pair<int, int> apple = std::make_pair(rand() % (WINDOW_WIDTH/GRID_SIZE) * GRID_SIZE, rand() % (WINDOW_HEIGHT/GRID_SIZE) * GRID_SIZE);
 
     SDL_Surface* gameOverSurface = IMG_Load("gameover.jpg");
     if (!gameOverSurface) {
@@ -241,20 +253,20 @@ int main()
             }
         }
 
-        // Move
+        // Di chuyển
         switch (dir)
         {
             case DOWN:
-                head.y += 10;
+                head.y += GRID_SIZE;
                 break;
             case UP:
-                head.y -= 10;
+                head.y -= GRID_SIZE;
                 break;
             case RIGHT:
-                head.x += 10;
+                head.x += GRID_SIZE;
                 break;
             case LEFT:
-                head.x -= 10;
+                head.x -= GRID_SIZE;
                 break;
             default:
                 break;
@@ -262,43 +274,31 @@ int main()
         snake.push_front(std::make_pair(head.x, head.y));
 		if(head.x < 0 )
         {
-            head.x = 800;
+            head.x = WINDOW_WIDTH;
         }
-        if(head.x > 800)
+        if(head.x > WINDOW_WIDTH)
         {
             head.x = 0;
         }
         if(head.y < 0)
         {
-            head.y = 640;
+            head.y = WINDOW_HEIGHT;
         }
-        if(head.y > 640)
+        if(head.y > WINDOW_HEIGHT)
         {
             head.y = 0;
         }
-        // Collision detection with apple
+        // Kiểm tra rắn ăn táo
         if (head.x == apple.first && head.y == apple.second)
         {
-            // Generate new position for the apple
+            // Tạo vị trí mới cho quả táo
             score++;
-            if(score != 0 && score % 5 == 0)
-            {
-                std::pair<int, int> banana = std::make_pair(rand() % 80 * 10, rand() % 64 * 10);
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-                SDL_Rect bananaRect = {banana.first, banana.second, 10, 10};
-                SDL_RenderFillRect(renderer, &bananaRect);
-                if(head.x == banana.first && head.y == banana.second)
-                {
-                    score += 2;
-                    Mix_PlayChannel(-1, eatSound, 0);
-                }
-            }
             Mix_PlayChannel(-1, eatSound, 0);
-            apple = std::make_pair(rand() % 80 * 10, rand() % 64 * 10);
+            apple = std::make_pair(rand() % (WINDOW_WIDTH / GRID_SIZE) * GRID_SIZE, rand() % (WINDOW_HEIGHT / GRID_SIZE) * GRID_SIZE);
         }
         else
         {
-            // Remove the tail
+            // Cắt bỏ phần đuôi
             snake.pop_back();
         }
         for (auto it = snake.begin() + 1; it != snake.end(); ++it) {
@@ -310,35 +310,36 @@ int main()
         }
         if(gameover)
         {
-           // Clear renderer
+           // Giải phóng
             SDL_RenderClear(renderer);
             
-            // Draw game over texture
+            // Vẽ GameOver
             SDL_RenderCopy(renderer, gameOverTexture, NULL, NULL);
 
-            // Update screen
+            // Cập nhật màn hình
             SDL_RenderPresent(renderer);
 
             SDL_Delay(2000);
-            // ShowMenu(renderer, fong);
+
             goto StartGame;
+            // Trở lại StartGame
         }
 
-        // Clear Window
+        // Giải phóng cửa sổ
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Draw Snake
+        // Vẽ con rắn
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         for (auto &segment : snake)
         {
-            SDL_Rect rect = {segment.first, segment.second, 10, 10};
+            SDL_Rect rect = {segment.first, segment.second, GRID_SIZE, GRID_SIZE};
             SDL_RenderFillRect(renderer, &rect);
         }
 
-        // Draw apple
+        // Vẽ quả táo
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_Rect appleRect = {apple.first, apple.second, 10, 10};
+        SDL_Rect appleRect = {apple.first, apple.second, GRID_SIZE, GRID_SIZE};
         SDL_RenderFillRect(renderer, &appleRect);
 
         SDL_Color textColor = {255, 255, 255, 255};
@@ -355,13 +356,13 @@ int main()
         SDL_Rect scoreRect = {0, 0, scoreSurface->w, scoreSurface->h};
         SDL_RenderCopy(renderer, scoreTexture, NULL, &scoreRect);
 
-        // Free memory
+        // Giải phóng bộ nhớ
         SDL_FreeSurface(scoreSurface);
         SDL_DestroyTexture(scoreTexture);
 
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(100); // Adjust the speed of the snake
+        SDL_Delay(100); 
     }
 
     Mix_FreeChunk(eatSound);

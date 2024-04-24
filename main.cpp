@@ -14,9 +14,13 @@ const int WINDOW_HEIGHT = 640;
 const int GRID_SIZE = 10;
 const int GAME_SPEED = 100;
 
+bool paused = false;
+const int PAUSE_KEY = SDLK_SPACE;
+
 void ExitGame();
 
-void ShowTutorial(SDL_Renderer* renderer, TTF_Font* font) {
+void ShowTutorial(SDL_Renderer* renderer, TTF_Font* font)
+{
     SDL_Event event;
     bool isRunning = true;
 
@@ -250,9 +254,35 @@ int main()
                 if(e.key.keysym.sym == SDLK_UP && dir != DOWN) {dir = UP;}
                 if(e.key.keysym.sym == SDLK_RIGHT && dir != LEFT) {dir = RIGHT;}
                 if(e.key.keysym.sym == SDLK_LEFT && dir != RIGHT) {dir = LEFT;}
+                if (e.key.keysym.sym == PAUSE_KEY) { paused = !paused; } // Kiểm tra nút tạm dừng
             }
         }
 
+        if(paused)
+        {
+        SDL_Color textColor = {255, 255, 255, 255};
+        SDL_Surface* pauseSurface = TTF_RenderText_Solid(fong, "Paused", textColor);
+        if (!pauseSurface) {
+        std::cout << "Failed to render pause surface: " << TTF_GetError() << std::endl;
+        return 1;
+        }
+        SDL_Texture* pauseTexture = SDL_CreateTextureFromSurface(renderer, pauseSurface);
+        if (!pauseTexture) {
+        std::cout << "Failed to create pause texture: " << SDL_GetError() << std::endl;
+        return 1;
+        }
+        SDL_Rect pauseRect = {WINDOW_WIDTH / 2 - pauseSurface->w / 2, WINDOW_HEIGHT / 2 - pauseSurface->h / 2, pauseSurface->w, pauseSurface->h};
+        SDL_RenderCopy(renderer, pauseTexture, NULL, &pauseRect);
+
+        // Giải phóng bộ nhớ
+        SDL_FreeSurface(pauseSurface);
+        SDL_DestroyTexture(pauseTexture);
+
+        SDL_RenderPresent(renderer);
+
+        // Tiếp tục vòng lặp chính
+        continue;
+        }
         // Di chuyển
         switch (dir)
         {

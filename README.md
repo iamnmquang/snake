@@ -25,6 +25,7 @@ You have to control the Snake to eat the apple in the screen and you will get 1 
 You can control Snake by ←↑→↓ and press Space if you want to stop game.
 ## About Game
 This SnakeGame was built base on tradional Snake game which is popular in many countries in the world. Texture and Mixer were taken on the Google and you can find them easily.
+I learned code from https://lazyfoo.net/tutorials/SDL and https://www.youtube.com/@codergopher8270
 ## Knowledge used
 OOP
 deque

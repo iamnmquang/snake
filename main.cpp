@@ -5,7 +5,7 @@
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 640;
 const int GRID_SIZE = 10;
-const int GAME_SPEED = 100;
+const int GAME_SPEED = 10;
 
 bool paused = false;
 const int PAUSE_KEY = SDLK_SPACE;
@@ -143,16 +143,16 @@ int main()
         switch (dir)
         {
             case DOWN:
-                head.y += GRID_SIZE;
+                head.y += GAME_SPEED;
                 break;
             case UP:
-                head.y -= GRID_SIZE;
+                head.y -= GAME_SPEED;
                 break;
             case RIGHT:
-                head.x += GRID_SIZE;
+                head.x += GAME_SPEED;
                 break;
             case LEFT:
-                head.x -= GRID_SIZE;
+                head.x -= GAME_SPEED;
                 break;
             default:
                 break;

@@ -3,7 +3,7 @@
 Trò trơi bao gồm hướng dẫn, tạm dừng và màn hình Game Over 
 Code được tham khảo trên Lazyfoo và youtuber codergopher và một số trang web ở trên google
 Hình ảnh và âm thanh được lấy ở trên google
-
+ádbakjdkla
 ## Biên soạn
 Biên dịch trên Windows với g++ -c *.cpp -std=c++17 -g -Wall -m64 -I include && g++ *.o -o main -L lib -lmingw32 -lSDL2main -lSDL2 -lSDL2_image -lSDL2_ttf -lSDL2_mixer
 

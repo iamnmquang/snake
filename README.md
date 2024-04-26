@@ -1,6 +1,6 @@
 ## Snake Game
 Được viết bằng chương trình C++ với thư viện SDL2
-Trò trơi bao gồm hướng dẫn, tạm dừng và màn hình Game Over
+Trò trơi bao gồm hướng dẫn, tạm dừng và màn hình Game Over 
 Code được tham khảo trên Lazyfoo và youtuber codergopher và một số trang web ở trên google
 Hình ảnh và âm thanh được lấy ở trên google
 

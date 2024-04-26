@@ -32,4 +32,6 @@ deque
 Using .h and .cpp
 ## Self-Assessment
 6-6.5
+## Video
+Intro: https://youtu.be/wdpYXea5GyA
 ## Thank you so much
